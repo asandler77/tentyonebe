@@ -74,4 +74,4 @@ User asked: \"{question}\" Answer with 'yes', 'no', or 'unclear'.\n\nAssistant:"
     return jsonify(answer=parsed["completion"].strip())
 
 if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=5000, debug=True)
+    app.run(host="0.0.0.0", port=5000, debug=False)
