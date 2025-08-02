@@ -45,6 +45,42 @@ def ask_question():
         return jsonify(answer="The game has not started yet. Please start a new game first."), 400
 
     data = request.get_json()
+    question = data.get("question", "").strip().lower()
+
+    # Если пользователь просит открыть слово:
+    reveal_triggers = ["reveal the word", "what is the word", "tell me the word", "open the word", "show the word"]
+    if any(trigger in question for trigger in reveal_triggers):
+        return jsonify(answer=f"The word I thought of is '{secret_word}'.")
+
+    # Если обычный вопрос — отправляем Cloud v2
+    body = json.dumps({
+        "prompt": f"""Human: We're playing '21 questions'. The secret word is '{secret_word}'. 
+User asked: "{question}" Answer with 'yes', 'no', or 'unclear'.\n\nAssistant:""",
+        "max_tokens_to_sample": 5,
+        "temperature": 0.0,
+        "top_k": 250,
+        "top_p": 1,
+        "stop_sequences": ["\n", "\n\nHuman:"]
+    })
+
+    response = bedrock.invoke_model(
+        modelId="anthropic.claude-v2",
+        body=body,
+        contentType="application/json",
+        accept="application/json"
+    )
+
+    result = response['body'].read().decode()
+    parsed = json.loads(result)
+
+    return jsonify(answer=parsed["completion"].strip())
+
+    global secret_word
+
+    if not secret_word:
+        return jsonify(answer="The game has not started yet. Please start a new game first."), 400
+
+    data = request.get_json()
     question = data.get("question", "")
 
     # Отправляем вопрос и загаданное слово в Claude v2
